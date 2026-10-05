@@ -1,0 +1,4 @@
+* Placeholder level-1 models so the netlist runs in stock ngspice.
+* Replace with a real PDK/PTM 32nm library for meaningful numbers.
+.model NMOS NMOS (LEVEL=1 VTO=0.4  KP=300u GAMMA=0.3 PHI=0.8 LAMBDA=0.05)
+.model PMOS PMOS (LEVEL=1 VTO=-0.4 KP=100u GAMMA=0.3 PHI=0.8 LAMBDA=0.05)
