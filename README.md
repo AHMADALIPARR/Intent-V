@@ -25,6 +25,8 @@ multiplication and a mux. Please don't describe it to anyone as more.
 | 0x0C   | emergent_structure | RO     |
 | 0x10   | system_entropy[7:0]| RO     |
 
+See [VERIFY.md](VERIFY.md) for the verification checklist.
+
 ## Commands
 
 ```sh
