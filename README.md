@@ -1,5 +1,12 @@
 # INTENT-V
 
+[![CI](https://github.com/BEL-ESPRIT-D-ACCORD-TRUST-HOLDINGS/demo-repository/actions/workflows/ci.yml/badge.svg)](https://github.com/BEL-ESPRIT-D-ACCORD-TRUST-HOLDINGS/demo-repository/actions/workflows/ci.yml)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+![Chisel 3.6](https://img.shields.io/badge/RTL-Chisel_3.6-orange)
+![Zig 0.13](https://img.shields.io/badge/firmware-Zig_0.13-f7a41d)
+![ngspice](https://img.shields.io/badge/analog-ngspice-lightgrey)
+![Target RV32IM](https://img.shields.io/badge/target-RV32IM-informational)
+
 A small RV32IM-adjacent hardware/firmware sandbox: a memory-mapped accelerator,
 its bare-metal driver, and an analog sanity netlist.
 
@@ -27,6 +34,60 @@ multiplication and a mux. Please don't describe it to anyone as more.
 
 See [VERIFY.md](VERIFY.md) for the verification checklist.
 
+## Architecture
+
+```mermaid
+flowchart LR
+    FW["Zig firmware<br/>(firmware/src/ccu.zig)"] -- "volatile MMIO<br/>base 0x4000_1000" --> MMIO
+    subgraph RTL["rtl/ (Chisel)"]
+        MMIO["CcuMmio<br/>register wrapper"] -- "rawIntent, information,<br/>passionBound" --> NEXUS["IntentNexus<br/>gated 32-bit multiplier<br/>+ 8-bit idle counter"]
+        NEXUS -- "emergentStructure,<br/>systemEntropy" --> MMIO
+    end
+    SPICE["spice/<br/>NAND transient netlist<br/>(placeholder models)"]:::side
+    classDef side stroke-dasharray: 4 3;
+```
+
+## Inside `IntentNexus`
+
+```mermaid
+flowchart TD
+    A[rawIntent] --> M["multiply<br/>keep low 32 bits"]
+    B[information] --> M
+    M --> X{passionBound?}
+    X -- 1 --> P[emergentStructure = product]
+    X -- 0 --> Z[emergentStructure = 0]
+    X -- 1 --> C0[counter := 0]
+    X -- 0 --> INC{counter == 255?}
+    INC -- no --> C1[counter := counter + 1]
+    INC -- yes --> C2[counter holds at 255]
+    C0 --> E[systemEntropy]
+    C1 --> E
+    C2 --> E
+```
+
+## Driver flow (`Ccu.compute`)
+
+```mermaid
+flowchart TD
+    S([compute a, b]) --> R[read system_entropy & 0xFF]
+    R --> Q{"> ENTROPY_LIMIT (200)?"}
+    Q -- yes --> ERR([error.EntropyExceeded])
+    Q -- no --> W["write raw_intent, information,<br/>then passion_bound = 1"]
+    W --> F[fence]
+    F --> RD[read emergent_structure]
+    RD --> U[write passion_bound = 0]
+    U --> OK([return product])
+```
+
+## CI pipeline
+
+```mermaid
+flowchart LR
+    T["push / PR /<br/>workflow_dispatch"] --> J1["rtl<br/>sbt test"]
+    T --> J2["firmware<br/>zig build test, zig build"]
+    T --> J3["spice<br/>ngspice -b nexus_nand.sp"]
+```
+
 ## Commands
 
 ```sh
@@ -42,3 +103,7 @@ Written without the toolchains available, so **none of the above has been
 run yet**. CI (`.github/workflows/ci.yml`) is the first real check.
 The SPICE netlist uses placeholder level-1 models; its timing numbers say
 nothing about a real 32nm process.
+
+## License
+
+Licensed under the [Apache License 2.0](LICENSE).
