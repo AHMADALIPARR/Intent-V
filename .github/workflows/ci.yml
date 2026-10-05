@@ -1,0 +1,35 @@
+name: CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  rtl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17, cache: sbt }
+      - uses: sbt/setup-sbt@v1
+      - run: sbt test
+        working-directory: rtl
+
+  firmware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mlugg/setup-zig@v1
+        with: { version: 0.13.0 }
+      - run: zig build test
+        working-directory: firmware
+      - run: zig build
+        working-directory: firmware
+
+  spice:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y ngspice
+      - run: ngspice -b nexus_nand.sp | tee out.txt && grep -q t_emergence out.txt
+        working-directory: spice
