@@ -6,9 +6,12 @@ pub fn build(b: *std.Build) void {
         .cpu_arch = .riscv32,
         .os_tag = .freestanding,
         .abi = .none,
-        .cpu_features_add = std.Target.riscv.featureSet(&.{ .m }),
+        .cpu_features_add = std.Target.riscv.featureSet(&.{.m}),
     });
-    const optimize = b.standardOptimizeOption(.{});
+    // Debug pulls in enough compiler-rt/panic code to overflow the 64K ROM
+    // (measured overflow: 149544 bytes). ReleaseSmall fits. Override with
+    // -Doptimize=Debug only if the linker ROM is enlarged.
+    const optimize = b.option(std.builtin.OptimizeMode, "optimize", "Optimization mode") orelse .ReleaseSmall;
 
     const exe = b.addExecutable(.{
         .name = "intent-v.elf",

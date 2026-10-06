@@ -99,10 +99,11 @@ cd spice    && ngspice -b nexus_nand.sp
 
 ## Status
 
-Written without the toolchains available, so **none of the above has been
-run yet**. CI (`.github/workflows/ci.yml`) is the first real check.
-The SPICE netlist uses placeholder level-1 models; its timing numbers say
-nothing about a real 32nm process.
+First local run is recorded in [verification/FIRST-RUN.md](verification/FIRST-RUN.md).
+RTL tests passed, `sbt run` emitted Verilog, Zig host tests passed, and the
+SPICE deck printed `t_emergence`. Debug firmware does not fit the 64K ROM;
+`zig build` defaults to ReleaseSmall for that reason. The SPICE models are
+still placeholders. No process or clock claim.
 
 ## License
 
